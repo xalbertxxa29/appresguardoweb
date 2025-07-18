@@ -1,0 +1,442 @@
+/* --- ESTILOS GLOBALES Y VARIABLES --- */
+:root {
+    --primary-red: #D62828; /* Liderman Red */
+    --primary-black: #000000; /* Liderman Black */
+    --primary-white: #FFFFFF; /* Liderman White */
+
+    --dark-bg-primary: var(--primary-black);
+    --dark-bg-secondary: #1C212B; /* A slightly lighter black for contrast */
+    --text-primary: var(--primary-white);
+    --text-secondary: #8A92A2; /* Keeping a subtle grey for secondary text */
+    --border-color: #3A404A;
+    --status-green: #28a745;
+    --status-red: #dc3545; /* Can be adjusted to Liderman Red if preferred for general errors */
+    --status-yellow: #ffc107;
+    --font-family: 'Roboto', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--dark-bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: 14px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.dashboard-container {
+    display: flex;
+}
+
+/* --- BARRA LATERAL (SIDEBAR) --- */
+.sidebar {
+    width: 240px;
+    background-color: var(--dark-bg-secondary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    border-right: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-white); /* Ensure logo is white */
+}
+
+.sidebar-nav {
+    flex-grow: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.9rem 1.5rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    gap: 1rem;
+    transition: background-color 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background-color: rgba(214, 40, 40, 0.1); /* Hover with Liderman Red */
+    color: var(--primary-white);
+}
+
+.nav-item.active {
+    background-color: var(--primary-red);
+    color: var(--primary-white);
+    font-weight: bold;
+}
+
+.sidebar-footer {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.nav-item-dropdown {
+    justify-content: space-between;
+}
+
+.dropdown-icon {
+    transition: transform 0.3s ease;
+}
+
+.nav-item-dropdown.active .dropdown-icon {
+    transform: rotate(180deg);
+}
+
+.submenu {
+    display: none;
+    padding-left: 1rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out;
+}
+
+.submenu.open {
+    display: block;
+    max-height: 200px;
+}
+
+.submenu-item span {
+    padding-left: 2.5rem;
+}
+
+
+/* --- CONTENIDO PRINCIPAL Y HEADER --- */
+.main-content {
+    flex-grow: 1;
+    padding: 2rem;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-shrink: 0;
+}
+
+.header-title h1 {
+    font-size: 1.8rem;
+    color: var(--primary-white);
+}
+.header-title p {
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.search-bar {
+    position: relative;
+}
+.search-bar input {
+    background-color: var(--dark-bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 0.5rem 2.5rem 0.5rem 1rem;
+    color: var(--text-primary);
+    width: 250px;
+    transition: border-color 0.2s;
+}
+.search-bar input:focus {
+    outline: none;
+    border-color: var(--primary-red); /* Focus with Liderman Red */
+}
+.search-bar .material-symbols-outlined {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: bold;
+}
+
+/* --- ÁREA DE CONTENIDO PRINCIPAL --- */
+#content-area {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* --- ESTILOS DEL DASHBOARD PRINCIPAL --- */
+.dashboard-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.kpi-row, .charts-row, .details-row {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.kpi-card {
+    flex: 1;
+    background-color: var(--dark-bg-secondary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.kpi-icon {
+    font-size: 2.5rem;
+    padding: 1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-white);
+}
+
+.kpi-info .kpi-number {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: var(--primary-white);
+}
+.kpi-info .kpi-title {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.widget {
+    flex: 1;
+    background-color: var(--dark-bg-secondary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.widget-header {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    color: var(--primary-white);
+    font-weight: bold;
+}
+
+#chart-widget, #incidents-chart-widget {
+    align-items: center;
+    justify-content: center;
+}
+
+.details-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+.details-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.details-list-item:last-child {
+    border-bottom: none;
+}
+.item-main .item-title {
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+.item-main .item-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+.item-side {
+    text-align: right;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.custom-table th, .custom-table td {
+    text-align: left;
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.custom-table th {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+.custom-table td {
+    color: var(--text-primary);
+}
+.custom-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.rank-badge {
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+.rank-1 { background-color: #d4af37; } /* Gold - kept for ranking visual distinction */
+.rank-2 { background-color: #c0c0c0; } /* Silver - kept for ranking visual distinction */
+.rank-3 { background-color: #cd7f32; } /* Bronze - kept for ranking visual distinction */
+
+
+/* --- ESTILOS PARA VISTA DE DATOS (TARJETAS) --- */
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.content-card {
+    background-color: var(--dark-bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.content-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(214, 40, 40, 0.15); /* Hover shadow with Liderman Red */
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.card-header h4 {
+    color: var(--primary-white);
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+.card-header .timestamp {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    margin-left: 1rem;
+}
+
+.card-body p {
+    margin-bottom: 0.85rem;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.card-body strong {
+    color: var(--text-secondary);
+    min-width: 150px;
+    display: inline-block;
+}
+
+.status-icon {
+    font-size: 1.2rem;
+}
+.status-success { color: var(--status-green); }
+.status-danger { color: var(--status-red); }
+
+.card-image {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin-top: 1rem;
+}
+
+/* --- CLASES DE UTILIDAD --- */
+.hidden {
+    display: none !important;
+}
+
+.loader {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #FFF;
+    border-bottom-color: var(--primary-red); /* Loader color with Liderman Red */
+    border-radius: 50%;
+    display: block;
+    margin: 5rem auto;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- Arreglo para el tamaño de los gráficos --- */
+.chart-container {
+    position: relative;
+    flex-grow: 1; /* Permite que el contenedor crezca para llenar el widget */
+    min-height: 0; /* Previene desbordamiento en contenedores flex */
+    max-height: 350px; /* Define una altura máxima para evitar que sea infinito */
+}
+
+/* --- MEJORA 1: Efecto de Carga Escalonada --- */
+.kpi-card, .widget {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeIn forwards 0.5s;
+}
+
+/* Retrasos para cada elemento para crear el efecto escalonado */
+.kpi-row .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+.kpi-row .kpi-card:nth-child(2) { animation-delay: 0.2s; }
+.kpi-row .kpi-card:nth-child(3) { animation-delay: 0.3s; }
+.kpi-row .kpi-card:nth-child(4) { animation-delay: 0.4s; }
+
+.charts-row .widget:nth-child(1) { animation-delay: 0.5s; }
+.charts-row .widget:nth-child(2) { animation-delay: 0.6s; }
+
+.details-row .widget:nth-child(1) { animation-delay: 0.7s; }
+.details-row .widget:nth-child(2) { animation-delay: 0.8s; }
+
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
