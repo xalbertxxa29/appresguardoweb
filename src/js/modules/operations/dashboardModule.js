@@ -77,6 +77,9 @@ export const DashboardModule = {
                     } else if (collectionName === 'cambio-led') {
                         mainTitle.textContent = "Cambio de Led Estado";
                         contentArea.innerHTML = `<iframe src="https://xalbertxxa29.github.io/app-resguardo/control.html" style="width: 100%; height: 80vh; border: 1px solid var(--glass-border); border-radius: 20px;"></iframe>`;
+                    } else if (collectionName === 'conexiones') {
+                        mainTitle.textContent = "Control de Asistencia";
+                        await this.loadCollectionData(contentArea, collectionName);
                     } else {
                         mainTitle.textContent = link.querySelector('span:last-child').textContent;
                         await this.loadCollectionData(contentArea, collectionName);

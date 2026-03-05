@@ -249,6 +249,8 @@ export const DashboardRenderer = {
             this._renderMediaGrid(container, items);
         } else if (col === 'checklists' || col === 'conductor') {
             this._renderChecklistGrid(container, items);
+        } else if (col === 'conexiones') {
+            this._renderAsistenciaGrid(container, items);
         } else {
             this._renderGenericGrid(container, items);
         }
@@ -424,6 +426,283 @@ export const DashboardRenderer = {
             wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
         go(0);
+    },
+
+    // ── Asistencia Grid (Conexiones) — Enhanced with Filters, Stats & Map ───
+    _renderAsistenciaGrid(container, allItems) {
+        let filteredItems = [...allItems];
+        const ASISTENCIA_PAGE_SIZE = 10; // Enforce max 10 records per page
+
+        container.innerHTML = `
+            <div class="asistencia-view-header">
+                <div class="asistencia-stats" id="asistencia-stats-panel"></div>
+                <div class="asistencia-filters">
+                    <div class="filter-group">
+                        <label>Buscar Resguardo</label>
+                        <input type="text" id="asistencia-search" class="filter-input" placeholder="Nombre del usuario...">
+                    </div>
+                    <div class="filter-group">
+                        <label>Desde</label>
+                        <input type="date" id="asistencia-date-from" class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label>Hasta</label>
+                        <input type="date" id="asistencia-date-to" class="filter-input">
+                    </div>
+                </div>
+            </div>
+            <div class="asistencia-layout">
+                <div class="asistencia-table-container">
+                    <div class="widget-header">Historial de Asistencia</div>
+                    <div id="asistencia-table-wrapper">
+                        <div class="data-grid" id="asistencia-grid"></div>
+                        <div id="asistencia-pagination-container" class="pagination-bar"></div>
+                    </div>
+                </div>
+                <div class="asistencia-map-container">
+                    <div class="map-card">
+                        <div id="asistencia-map" style="height: 600px; border-radius: 15px; border: 1px solid var(--glass-border);"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        let map = null;
+        let markersGroup = null;
+
+        const initMap = () => {
+            if (map) return;
+            const mapEl = document.getElementById('asistencia-map');
+            if (!mapEl) return;
+
+            map = L.map('asistencia-map', {
+                zoomControl: true,
+                fadeAnimation: true,
+                markerZoomAnimation: true
+            }).setView([-12.046374, -77.042793], 13);
+
+            // Dark Mode Tile Layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                className: 'leaflet-tile-dark' // Custom class for CSS filter
+            }).addTo(map);
+            markersGroup = L.featureGroup().addTo(map);
+        };
+
+        const calculateDuration = (start, end) => {
+            if (!start || !end) return { ms: 0, text: '---' };
+            const s = start.toDate ? start.toDate() : new Date(start);
+            const e = end.toDate ? end.toDate() : new Date(end);
+            const diff = Math.abs(e - s);
+
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            return { ms: diff, text: `${hours}h ${minutes}m ${seconds}s` };
+        };
+
+        const updateStats = (data) => {
+            const statsPanel = document.getElementById('asistencia-stats-panel');
+            if (!statsPanel) return;
+
+            const totalSessions = data.length;
+            let totalMs = 0;
+            data.forEach(item => {
+                const dur = calculateDuration(item.timestamp, item.ended_at);
+                totalMs += dur.ms;
+            });
+
+            const totalHours = (totalMs / 3600000).toFixed(1);
+
+            statsPanel.innerHTML = `
+                <div class="stat-mini-card">
+                    <div class="stat-icon-wrap"><span class="material-symbols-outlined">badge</span></div>
+                    <div class="stat-info">
+                        <span class="stat-value">${totalSessions}</span>
+                        <span class="stat-label">Sesiones Totales</span>
+                    </div>
+                </div>
+                <div class="stat-mini-card">
+                    <div class="stat-icon-wrap"><span class="material-symbols-outlined">timer</span></div>
+                    <div class="stat-info">
+                        <span class="stat-value">${totalHours}h</span>
+                        <span class="stat-label">Tiempo Total</span>
+                    </div>
+                </div>
+            `;
+        };
+
+        const applyFilters = () => {
+            const search = document.getElementById('asistencia-search').value.toLowerCase();
+            const from = document.getElementById('asistencia-date-from').value;
+            const to = document.getElementById('asistencia-date-to').value;
+
+            filteredItems = allItems.filter(item => {
+                const userName = (item.usuario || item.user || '').toLowerCase();
+                const matchesSearch = userName.includes(search);
+
+                let matchesDate = true;
+                if (from || to) {
+                    const itemDate = item.timestamp?.toDate ? item.timestamp.toDate() : new Date(item.timestamp);
+                    const itemYMD = itemDate.toISOString().split('T')[0];
+                    if (from && itemYMD < from) matchesDate = false;
+                    if (to && itemYMD > to) matchesDate = false;
+                }
+
+                return matchesSearch && matchesDate;
+            });
+
+            updateStats(filteredItems);
+            go(0);
+        };
+
+        const renderPage = (pageItems, gridEl) => {
+            gridEl.innerHTML = `
+                <table class="grid-table">
+                    <thead>
+                        <tr>
+                            <th>INICIO</th>
+                            <th>RESGUARDO</th>
+                            <th>SALIDA</th>
+                            <th>DURACIÓN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${pageItems.map(item => {
+                const startStr = item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString('es-PE', { hour12: true, hour: '2-digit', minute: '2-digit' }) : '---';
+                const endStr = item.ended_at?.toDate ? item.ended_at.toDate().toLocaleString('es-PE', { hour12: true, hour: '2-digit', minute: '2-digit' }) : '---';
+                const durationData = calculateDuration(item.timestamp, item.ended_at);
+                const duration = durationData.text;
+
+                return `
+                                <tr class="asistencia-row">
+                                    <td>
+                                        <div class="time-cell">
+                                            <span class="material-symbols-outlined icon-small neon-text-cyan">login</span>
+                                            ${startStr}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="user-cell">
+                                            <span class="user-badge">${item.usuario || item.user || '---'}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="time-cell">
+                                            <span class="material-symbols-outlined icon-small neon-text-red">logout</span>
+                                            ${endStr}
+                                        </div>
+                                    </td>
+                                    <td><span class="duration-badge">${duration}</span></td>
+                                </tr>
+                            `;
+            }).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            // Update Map
+            if (markersGroup) markersGroup.clearLayers();
+            const markers = [];
+
+            pageItems.forEach(item => {
+                const parseCoords = (c) => {
+                    if (!c || typeof c !== 'string') return null;
+                    const parts = c.split(',').map(p => parseFloat(p.trim()));
+                    return (parts.length === 2 && !isNaN(parts[0])) ? parts : null;
+                };
+
+                const startCoords = parseCoords(item.ubicacion);
+                const endCoords = parseCoords(item.ubicacion_salida);
+
+                if (startCoords) {
+                    const startMarker = L.circleMarker(startCoords, {
+                        radius: 8,
+                        fillColor: "#4ade80",
+                        color: "#fff",
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8,
+                        className: 'pulsing-marker-start'
+                    }).bindPopup(`
+                        <div class="map-popup">
+                            <strong class="neon-text-green">Punto de Inicio</strong><br>
+                            ${item.usuario || item.user}<br>
+                            <small>${item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString() : ''}</small>
+                        </div>
+                    `);
+                    markersGroup.addLayer(startMarker);
+                    markers.push(startCoords);
+                }
+
+                if (endCoords) {
+                    const endMarker = L.circleMarker(endCoords, {
+                        radius: 8,
+                        fillColor: "#f87171",
+                        color: "#fff",
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8,
+                        className: 'pulsing-marker-end'
+                    }).bindPopup(`
+                        <div class="map-popup">
+                            <strong class="neon-text-red">Punto de Fin</strong><br>
+                            ${item.usuario || item.user}<br>
+                            <small>${item.ended_at?.toDate ? item.ended_at.toDate().toLocaleString() : ''}</small>
+                        </div>
+                    `);
+                    markersGroup.addLayer(endMarker);
+                    markers.push(endCoords);
+                }
+
+                if (startCoords && endCoords) {
+                    L.polyline([startCoords, endCoords], {
+                        color: '#00f2fe',
+                        weight: 3,
+                        dashArray: '10, 10',
+                        opacity: 0.8,
+                        lineCap: 'round'
+                    }).addTo(markersGroup);
+                }
+            });
+
+            if (markers.length > 0 && map) {
+                map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+            }
+        };
+
+        const go = (page) => {
+            const gridEl = document.getElementById('asistencia-grid');
+            const wrapper = document.getElementById('asistencia-table-wrapper');
+            if (!gridEl || !wrapper) return;
+
+            const start = page * ASISTENCIA_PAGE_SIZE;
+            const end = start + ASISTENCIA_PAGE_SIZE;
+            const pageItems = filteredItems.slice(start, end);
+
+            renderPage(pageItems, gridEl);
+
+            buildPagination({
+                items: filteredItems,
+                page: page,
+                pageSize: ASISTENCIA_PAGE_SIZE,
+                gridEl: gridEl,
+                wrapperEl: wrapper,
+                onPageChange: (p) => go(p)
+            });
+        };
+
+        // Listeners
+        setTimeout(() => {
+            initMap();
+            updateStats(allItems);
+            go(0);
+
+            document.getElementById('asistencia-search').addEventListener('input', applyFilters);
+            document.getElementById('asistencia-date-from').addEventListener('change', applyFilters);
+            document.getElementById('asistencia-date-to').addEventListener('change', applyFilters);
+        }, 300);
     },
 
     // ── Generic fallback — with pagination ────────────────────────────────
